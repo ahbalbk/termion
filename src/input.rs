@@ -1,5 +1,6 @@
 //! User input.
 
+use std::fmt;
 use std::io::{self, Read, Write};
 use std::ops;
 
