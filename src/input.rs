@@ -173,11 +173,23 @@ impl<R: Read> TermReadEventsAndRaw for R {
     }
 }
 
-/// A sequence of escape codes to enable terminal mouse support.
-const ENTER_MOUSE_SEQUENCE: &'static str = csi!("?1000h\x1b[?1002h\x1b[?1015h\x1b[?1006h");
+/// Add the mouse support to the terminal.
+pub struct EnterMouseSequence;
 
-/// A sequence of escape codes to disable terminal mouse support.
-const EXIT_MOUSE_SEQUENCE: &'static str = csi!("?1006l\x1b[?1015l\x1b[?1002l\x1b[?1000l");
+impl fmt::Display for EnterMouseSequence {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, csi!("?1000h\x1b[?1002h\x1b[?1015h\x1b[?1006h"))
+    }
+}
+
+/// Remove the mouse support from the terminal.
+pub struct ExitMouseSequence;
+
+impl fmt::Display for ExitMouseSequence {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, csi!("?1006l\x1b[?1015l\x1b[?1002l\x1b[?1000l"))
+    }
+}
 
 /// A terminal with added mouse support.
 ///
@@ -188,15 +200,14 @@ pub struct MouseTerminal<W: Write> {
 
 impl<W: Write> From<W> for MouseTerminal<W> {
     fn from(mut from: W) -> MouseTerminal<W> {
-        from.write_all(ENTER_MOUSE_SEQUENCE.as_bytes()).unwrap();
-
+        write!(from, "{}", EnterMouseSequence).expect("enter mouse sequence");
         MouseTerminal { term: from }
     }
 }
 
 impl<W: Write> Drop for MouseTerminal<W> {
     fn drop(&mut self) {
-        self.term.write_all(EXIT_MOUSE_SEQUENCE.as_bytes()).unwrap();
+        write!(self, "{}", ExitMouseSequence).expect("exit mouse sequence");
     }
 }
 
